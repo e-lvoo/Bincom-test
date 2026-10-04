@@ -1,30 +1,44 @@
-# Bincom test - Delta State 2011 election results
+# Bincom election results project
 
-Next.js (App Router) + MySQL (`mysql2`). Three pages:
+This repository contains two implementations of the same Delta State 2011 election-results test:
 
-| Page | Route | What it does |
-|---|---|---|
-| Q1 | `/` | Pick LGA, then polling unit, see that unit's party scores |
-| Q2 | `/lga` | Pick LGA, see the sum of all its polling unit results (compared with `announced_lga_results` for reference only) |
-| Q3 | `/new` | Chained LGA > ward selects, enter a new polling unit and a score for every party |
+- [`next_version/`](next_version/) — Next.js, React, and MySQL (`mysql2`).
+- [`python_version/`](python_version/) — Flask, server-rendered HTML, and MySQL.
 
-## Run locally
-1. Create the database and import (relaxed SQL mode is needed because the dump has `0000-00-00` dates):
-   ```
-   mysql -u root -p -e "CREATE DATABASE bincom_test"
-   mysql -u root -p --init-command="SET SESSION sql_mode=''" bincom_test < db/bincom_test.sql
-   ```
-2. `cp .env.example .env.local` and fill in the DB values.
-3. `npm install && npm run dev` then open http://localhost:3000
+The shared SQL dump is in [`db/bincom_test.sql`](db/bincom_test.sql). Both apps use the `DB_*` environment variables listed in [`.env.example`](.env.example). Keep real credentials in local environment files or your hosting provider; never commit them.
 
-## Deploy
-Host MySQL somewhere reachable from the internet, import the dump the same way (relaxed `sql_mode`), set the `DB_*` env vars on the host (Vercel, Render, etc.), and set `DB_SSL=true` if the DB requires TLS.
+## Next.js version
 
-## Schema notes that shaped the queries
-- `polling_unit.lga_id` -> `lga.lga_id` (not `lga.uniqueid`).
-- `ward.ward_id` is not unique; `polling_unit.uniquewardid` -> `ward.uniqueid`.
-- `announced_pu_results.polling_unit_uniqueid` is a varchar holding `polling_unit.uniqueid`.
-- `announced_lga_results.lga_name` actually holds the `lga_id` as text.
-- `party_abbreviation` is `char(4)`, so `LABOUR` is stored as `LABO`.
-- Q2 sums by `polling_unit.lga_id`, the same key Q1 lists by, so the two pages agree. A few rows in the dump have a ward from a different LGA than their `lga_id`; the app treats `lga_id` as the source of truth.
-- Q3 inserts the polling unit and all party rows in one transaction.
+```sh
+cd next_version
+npm install
+cp ../.env.example .env.local
+# Edit .env.local with your database settings.
+npm run dev
+```
+
+Open http://localhost:3000. The app has polling-unit results (`/`), LGA totals (`/lga`), and a new polling-unit form (`/new`).
+
+For the existing Vercel project, set **Root Directory** to `next_version` before redeploying.
+
+## Python version
+
+```sh
+cd python_version
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
+
+Set the `DB_*` values in your shell, then run `python3 app.py`. Open http://localhost:5000. See [`python_version/README.md`](python_version/README.md) for details.
+
+## Database
+
+Create a MySQL database and import the SQL dump with relaxed session SQL mode because it contains legacy zero dates. For a local MySQL server, from the repository root:
+
+```sh
+mysql -u root -p -e "CREATE DATABASE bincom_test"
+mysql -u root -p --init-command="SET SESSION sql_mode=''" bincom_test < db/bincom_test.sql
+```
+
+For a hosted database, use its connection details in the environment variables and import the dump with that provider's TLS connection settings. Set `DB_SSL=true` when the provider requires TLS.

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="eyebrow">THE DELTA STATE ARCHIVE <span>/</span> 2011</p>
+<h1>Local government totals</h1>
+<p class="lead">Sum of the results recorded at polling units in each local government. Announced LGA figures are shown only as a reference.</p>
+
+<section class="panel selector-panel selector-single">
+  <div class="section-intro"><span class="step">01</span><div><h2>Choose an area</h2><p>View its combined polling unit results.</p></div></div>
+  <form action="{{ url_for('lga_total') }}" method="get" class="field">
+    <label for="lga">Local government</label>
+    <div class="control-row"><select id="lga" name="lga" required>
+      <option value="">Select an LGA</option>
+      {% for lga in lgas %}<option value="{{ lga.lga_id }}" {% if selected_lga == lga.lga_id %}selected{% endif %}>{{ lga.lga_name }}</option>{% endfor %}
+    </select><button type="submit">Show totals</button></div>
+  </form>
+</section>
+
+{% if selected_lga is not none %}
+  {% if totals %}
+  <section class="panel results-panel">
+    <div class="result-title"><div><p class="eyebrow">COMBINED RESULTS</p><h2>{{ (lgas|selectattr('lga_id', 'equalto', selected_lga)|first).lga_name }}</h2><p class="muted">{{ reporting_count }} of {{ units_count }} polling units have results.</p></div><span class="tag">{{ reporting_count }}/{{ units_count }} REPORTING</span></div>
+    <div class="table-scroll"><table><thead><tr><th>Party</th><th class="numeric">Polling unit sum</th>{% if announced %}<th class="numeric">Announced at LGA</th>{% endif %}</tr></thead>
+      <tbody>
+        {% for row in totals %}<tr><td class="bar-cell"><span class="bar-fill" style="width: {{ (row.total / (totals[0].total or 1) * 100)|round(1) }}%"></span><strong>{{ row.party }}</strong></td><td class="numeric">{{ '{:,}'.format(row.total) }}</td>{% if announced %}<td class="numeric">{{ '{:,}'.format(announced[row.party]) if row.party in announced else '—' }}</td>{% endif %}</tr>{% endfor %}
+        <tr class="total-row"><td>Total</td><td class="numeric">{{ '{:,}'.format(total_votes) }}</td>{% if announced %}<td></td>{% endif %}</tr>
+      </tbody></table></div>
+    {% if not announced %}<p class="footnote">No announced LGA result is available for comparison.</p>{% endif %}
+  </section>
+  {% else %}<section class="panel empty-state">No polling unit results are recorded for this local government yet.</section>{% endif %}
+{% endif %}
+{% endblock %}

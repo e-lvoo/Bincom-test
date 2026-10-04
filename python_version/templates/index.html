@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="eyebrow">THE DELTA STATE ARCHIVE <span>/</span> 2011</p>
+<h1>Polling unit results</h1>
+<p class="lead">Choose a local government and polling unit to view its recorded party scores.</p>
+
+<section class="panel selector-panel" aria-label="Find a polling unit">
+  <div class="section-intro"><span class="step">01</span><div><h2>Find a polling unit</h2><p>Choose an area, then select a unit.</p></div></div>
+  <div class="selector-fields">
+    <form action="{{ url_for('polling_unit_result') }}" method="get" class="field">
+      <label for="lga">Local government</label>
+      <div class="control-row">
+        <select id="lga" name="lga" required>
+          <option value="">Select an LGA</option>
+          {% for lga in lgas %}<option value="{{ lga.lga_id }}" {% if selected_lga == lga.lga_id %}selected{% endif %}>{{ lga.lga_name }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="button secondary">Load units</button>
+      </div>
+    </form>
+    {% if selected_lga is not none %}
+    <form action="{{ url_for('polling_unit_result') }}" method="get" class="field">
+      <input type="hidden" name="lga" value="{{ selected_lga }}">
+      <label for="pu">Polling unit <span class="muted">({{ units|length }} listed)</span></label>
+      <div class="control-row">
+        <select id="pu" name="pu" required>
+          <option value="">Select a polling unit</option>
+          {% for unit_option in units %}
+            <option value="{{ unit_option.uniqueid }}" {% if selected_pu == unit_option.uniqueid %}selected{% endif %}>
+              {{ unit_option.polling_unit_number or '' }}{% if unit_option.polling_unit_number %} — {% endif %}{{ unit_option.polling_unit_name or ('Polling unit ' ~ unit_option.uniqueid) }}
+            </option>
+          {% endfor %}
+        </select>
+        <button type="submit">View result</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="field disabled-field"><label>Polling unit</label><div class="placeholder">Choose a local government first</div></div>
+    {% endif %}
+  </div>
+</section>
+
+{% if unit %}
+<section class="panel results-panel">
+  <div class="result-title">
+    <div><p class="eyebrow">POLLING UNIT RESULT</p><h2>{{ unit.polling_unit_number or '' }}{% if unit.polling_unit_number %} — {% endif %}{{ unit.polling_unit_name or ('Polling unit ' ~ unit.uniqueid) }}</h2>
+      <p class="muted">{{ [unit.ward_name, unit.lga_name]|select|join(', ') }}</p></div>
+    <span class="tag">UNIT {{ unit.uniqueid }}</span>
+  </div>
+  {% if results %}
+  <div class="table-scroll"><table><thead><tr><th>Party</th><th class="numeric">Votes</th></tr></thead>
+    <tbody>
+      {% set max_score = results|map(attribute='party_score')|max %}
+      {% set total = namespace(value=0) %}
+      {% for result in results %}{% set total.value = total.value + result.party_score %}
+      <tr><td class="bar-cell"><span class="bar-fill" style="width: {{ (result.party_score / (max_score or 1) * 100)|round(1) }}%"></span><strong>{{ result.party_abbreviation }}</strong></td><td class="numeric">{{ '{:,}'.format(result.party_score) }}</td></tr>
+      {% endfor %}
+      <tr class="total-row"><td>Total</td><td class="numeric">{{ '{:,}'.format(total.value) }}</td></tr>
+    </tbody></table></div>
+  {% else %}<p class="empty-state">No results have been recorded for this polling unit yet.</p>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

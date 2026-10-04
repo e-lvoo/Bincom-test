@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="eyebrow">THE DELTA STATE ARCHIVE <span>/</span> 2011</p>
+<h1>Add a polling unit</h1>
+<p class="lead">Enter a new unit and its vote count for every party.</p>
+
+<form action="{{ url_for('new_polling_unit') }}" method="post" class="panel entry-form">
+  <section class="form-section">
+    <div class="section-intro"><span class="step">01</span><div><h2>Location</h2><p>Choose the local government and ward.</p></div></div>
+    <div class="form-grid">
+      <div class="field"><label for="lga">Local government</label><select id="lga" name="lga" required>
+        <option value="">Select an LGA</option>
+        {% for lga in lgas %}<option value="{{ lga.lga_id }}" {% if selected_lga == lga.lga_id %}selected{% endif %}>{{ lga.lga_name }}</option>{% endfor %}
+      </select></div>
+      <div class="field"><label for="ward_unique_id">Ward</label><select id="ward_unique_id" name="ward_unique_id" {% if not selected_lga %}disabled{% endif %} required>
+        <option value="">{% if selected_lga %}Select a ward{% else %}Choose an LGA first{% endif %}</option>
+        {% for ward in wards %}<option value="{{ ward.uniqueid }}" {% if selected_ward == ward.uniqueid %}selected{% endif %}>{{ ward.ward_name }}</option>{% endfor %}
+      </select></div>
+    </div>
+    {% if not selected_lga %}<p class="form-hint">Select a local government, then use the button below to load its wards.</p>{% endif %}
+    <button class="button secondary" type="submit" name="action" value="load">Load wards</button>
+  </section>
+
+  {% if selected_lga %}
+  <section class="form-section">
+    <div class="section-intro"><span class="step">02</span><div><h2>Polling unit details</h2><p>Give the new polling unit a name.</p></div></div>
+    <div class="form-grid">
+      <div class="field"><label for="name">Polling unit name</label><input id="name" name="name" maxlength="50" value="{{ form.get('name', '') }}" required></div>
+      <div class="field"><label for="number">Polling unit number <span class="muted">(optional)</span></label><input id="number" name="number" maxlength="50" value="{{ form.get('number', '') }}"></div>
+    </div>
+  </section>
+  <section class="form-section">
+    <div class="section-intro"><span class="step">03</span><div><h2>Votes per party</h2><p>Enter a whole number for each party. Use zero where there were no votes.</p></div></div>
+    <div class="party-grid">
+      {% for party in parties %}<div class="field"><label for="score_{{ party.partyid }}">{{ party.partyid }}</label><input id="score_{{ party.partyid }}" name="score_{{ party.partyid }}" type="number" min="0" step="1" inputmode="numeric" value="{{ form.get('score_' ~ party.partyid, '') }}" required></div>{% endfor %}
+    </div>
+    {% if wards %}<button type="submit" name="action" value="save">Save polling unit</button>{% else %}<p class="form-hint">This LGA has no wards available.</p>{% endif %}
+  </section>
+  {% endif %}
+</form>
+{% endblock %}

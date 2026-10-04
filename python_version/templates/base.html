@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173b2d">
+  <title>{{ title }} · Delta Results</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <div class="nav-shell">
+      <a class="brand" href="{{ url_for('polling_unit_result') }}">
+        <span class="brand-mark" aria-hidden="true">D</span>
+        <span class="brand-copy"><strong>Delta results</strong><small>2011 · ELECTION ARCHIVE</small></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="{{ url_for('polling_unit_result') }}" {% if request.endpoint == 'polling_unit_result' %}aria-current="page"{% endif %}>Polling units</a>
+        <a href="{{ url_for('lga_total') }}" {% if request.endpoint == 'lga_total' %}aria-current="page"{% endif %}>LGA totals</a>
+        <a href="{{ url_for('new_polling_unit') }}" {% if request.endpoint == 'new_polling_unit' %}aria-current="page"{% endif %}>Add a unit</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <p class="message {{ category }}" role="{% if category == 'error' %}alert{% else %}status{% endif %}">{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer>Delta State election results <span>·</span> 2011</footer>
+</body>
+</html>
